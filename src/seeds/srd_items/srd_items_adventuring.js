@@ -1,6 +1,6 @@
 // src/data/adventuringGearSRD.js
 
-export const ADVENTURING_GEAR_SRD = [
+export const ADVENTURING = [
   // --- Equipo general ---
 
   {

@@ -1,7 +1,7 @@
 // src/srd/srdArmors.es.js
 // Armaduras SRD 5e en español, listas para usar con src/models/Item.js
 
-export const SRD_ARMORS_ES = [
+export const SRD_ARMORS = [
   // =========
   // ARMADURA LIGERA
   // =========
