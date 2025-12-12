@@ -8,748 +8,8 @@ import {
 } from "discord.js";
 
 import ItemModel from "../../models/Item.js";
-import CharacterModel from "../../models/Character.js"; // Asegúrate de que existe
+import CharacterModel from "../../models/Character.js";
 import { getEconomyConfig } from "../../utils/economyConfig.js";
-
-export default {
-  data: new SlashCommandBuilder()
-    .setName("item")
-    .setDescription("Administra y usa los objetos del sistema.")
-
-    // ======================
-    //  ADMIN: ADD (GENÉRICO)
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("add")
-        .setDescription("Crea un nuevo objeto genérico (sin datos de arma/armadura).")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre del objeto")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("type")
-            .setDescription("Tipo de objeto")
-            .addChoices(
-              { name: "Arma", value: "weapon" },
-              { name: "Armadura", value: "armor" },
-              { name: "Equipo", value: "gear" },
-              { name: "Consumible", value: "consumable" },
-              { name: "Herramienta", value: "tool" },
-              { name: "Otro", value: "other" }
-            )
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("rarity")
-            .setDescription("Rareza del objeto")
-            .addChoices(
-              { name: "Ninguna / genérica", value: "none" },
-              { name: "Común", value: "common" },
-              { name: "Poco común", value: "uncommon" },
-              { name: "Raro", value: "rare" },
-              { name: "Muy raro", value: "very_rare" },
-              { name: "Legendario", value: "legendary" },
-              { name: "Artefacto", value: "artifact" }
-            )
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("value")
-            .setDescription("Valor base de la moneda")
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("weight")
-            .setDescription("Peso")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("description")
-            .setDescription("Descripción corta")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  ADMIN: ADD_WEAPON
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("add_weapon")
-        .setDescription("Crea un nuevo objeto de tipo arma.")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre del arma")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("rarity")
-            .setDescription("Rareza del arma")
-            .addChoices(
-              { name: "Ninguna / genérica", value: "none" },
-              { name: "Común", value: "common" },
-              { name: "Poco común", value: "uncommon" },
-              { name: "Raro", value: "rare" },
-              { name: "Muy raro", value: "very_rare" },
-              { name: "Legendario", value: "legendary" },
-              { name: "Artefacto", value: "artifact" }
-            )
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("value")
-            .setDescription("Valor base de la moneda")
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("weight")
-            .setDescription("Peso")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("description")
-            .setDescription("Descripción corta")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("weapon_damage_dice")
-            .setDescription("Daño del arma (ej. 1d8, 2d6)")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("weapon_damage_type")
-            .setDescription("Tipo de daño (ej. slashing, piercing, fire)")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("weapon_properties")
-            .setDescription("Propiedades (ligera, pesada, finesse...) separadas por comas")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_reach")
-            .setDescription("Alcance cuerpo a cuerpo (ft), ej. 5 o 10")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_range_normal")
-            .setDescription("Rango normal (ft) si es a distancia/arrojadiza")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_range_max")
-            .setDescription("Rango máximo (ft) si es a distancia/arrojadiza")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("weapon_ability_mode")
-            .setDescription("Estadística usada para ataque/daño")
-            .addChoices(
-              { name: "Fuerza", value: "str" },
-              { name: "Destreza", value: "dex" },
-              { name: "Fuerza o Destreza (la más alta)", value: "str_or_dex_highest" },
-              { name: "Otra / especial", value: "other" }
-            )
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_magic_bonus_attack")
-            .setDescription("Bono mágico al ataque (+1, +2, +3)")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_magic_bonus_damage")
-            .setDescription("Bono mágico al daño (+1, +2, +3)")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  ADMIN: ADD_ARMOR
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("add_armor")
-        .setDescription("Crea un nuevo objeto de tipo armadura.")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre de la armadura")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("rarity")
-            .setDescription("Rareza de la armadura")
-            .addChoices(
-              { name: "Ninguna / genérica", value: "none" },
-              { name: "Común", value: "common" },
-              { name: "Poco común", value: "uncommon" },
-              { name: "Raro", value: "rare" },
-              { name: "Muy raro", value: "very_rare" },
-              { name: "Legendario", value: "legendary" },
-              { name: "Artefacto", value: "artifact" }
-            )
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("value")
-            .setDescription("Valor base de la moneda")
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("weight")
-            .setDescription("Peso")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("description")
-            .setDescription("Descripción corta")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("armor_type")
-            .setDescription("Tipo de armadura")
-            .addChoices(
-              { name: "Ligera", value: "light" },
-              { name: "Intermedia", value: "medium" },
-              { name: "Pesada", value: "heavy" },
-              { name: "Escudo", value: "shield" },
-              { name: "Otra", value: "other" }
-            )
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("armor_base_ac")
-            .setDescription("CA base (ej. 11, 12, 14)")
-            .setRequired(false)
-        )
-        .addBooleanOption(o =>
-          o
-            .setName("armor_allows_dex_bonus")
-            .setDescription("¿Aplica bonificador de Destreza?")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("armor_max_dex_bonus")
-            .setDescription("Máximo bonificador de Destreza (ej. +2)")
-            .setRequired(false)
-        )
-        .addBooleanOption(o =>
-          o
-            .setName("armor_stealth_disadvantage")
-            .setDescription("¿Da desventaja en Sigilo?")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("armor_magic_bonus_ac")
-            .setDescription("Bono mágico a la CA (+1, +2, +3)")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  ADMIN: DELETE
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("delete")
-        .setDescription("Elimina un objeto por nombre.")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre del objeto a eliminar")
-            .setRequired(true)
-        )
-    )
-
-    // ======================
-    //  ADMIN: ENABLE
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("enable")
-        .setDescription("Activa un objeto.")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre del objeto a activar")
-            .setRequired(true)
-        )
-    )
-
-    // ======================
-    //  ADMIN: DISABLE
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("disable")
-        .setDescription("Desactiva un objeto.")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre del objeto a desactivar")
-            .setRequired(true)
-        )
-    )
-
-    // ======================
-    //  ADMIN: EDIT (BÁSICO)
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("edit")
-        .setDescription("Edita los datos básicos de un objeto.")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre del objeto a editar")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("type")
-            .setDescription("Nuevo tipo (opcional)")
-            .addChoices(
-              { name: "Arma", value: "weapon" },
-              { name: "Armadura", value: "armor" },
-              { name: "Equipo", value: "gear" },
-              { name: "Consumible", value: "consumable" },
-              { name: "Herramienta", value: "tool" },
-              { name: "Otro", value: "other" }
-            )
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("rarity")
-            .setDescription("Nueva rareza")
-            .addChoices(
-              { name: "Ninguna / genérica", value: "none" },
-              { name: "Común", value: "common" },
-              { name: "Poco común", value: "uncommon" },
-              { name: "Raro", value: "rare" },
-              { name: "Muy raro", value: "very_rare" },
-              { name: "Legendario", value: "legendary" },
-              { name: "Artefacto", value: "artifact" }
-            )
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("value")
-            .setDescription("Nuevo valor base")
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("weight")
-            .setDescription("Nuevo peso")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("description")
-            .setDescription("Nueva descripción")
-            .setRequired(false)
-        )
-        .addBooleanOption(o =>
-          o
-            .setName("in_store")
-            .setDescription("¿Aparece en la tienda?")
-            .setRequired(false)
-        )
-        .addBooleanOption(o =>
-          o
-            .setName("buyable")
-            .setDescription("¿Se puede comprar?")
-            .setRequired(false)
-        )
-        .addBooleanOption(o =>
-          o
-            .setName("sellable")
-            .setDescription("¿Se puede vender a la tienda?")
-            .setRequired(false)
-        )
-        .addBooleanOption(o =>
-          o
-            .setName("tradeable")
-            .setDescription("¿Se puede intercambiar?")
-            .setRequired(false)
-        )
-        .addNumberOption(o =>
-          o
-            .setName("shop_price")
-            .setDescription("Precio específico de tienda (0 = usar valor base)")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  ADMIN: EDIT_WEAPON
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("edit_weapon")
-        .setDescription("Edita los datos de arma de un objeto.")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre del objeto (arma) a editar")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("weapon_damage_dice")
-            .setDescription("Nuevo daño del arma (ej. 1d8, 2d6)")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("weapon_damage_type")
-            .setDescription("Nuevo tipo de daño")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("weapon_properties")
-            .setDescription("Nuevas propiedades (separadas por comas)")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_reach")
-            .setDescription("Nuevo alcance cuerpo a cuerpo (ft)")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_range_normal")
-            .setDescription("Nuevo rango normal (ft)")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_range_max")
-            .setDescription("Nuevo rango máximo (ft)")
-            .setRequired(false)
-        )
-        .addStringOption(o =>
-          o
-            .setName("weapon_ability_mode")
-            .setDescription("Nueva estadística usada para ataque/daño")
-            .addChoices(
-              { name: "Fuerza", value: "str" },
-              { name: "Destreza", value: "dex" },
-              { name: "Fuerza o Destreza (la más alta)", value: "str_or_dex_highest" },
-              { name: "Otra / especial", value: "other" }
-            )
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_magic_bonus_attack")
-            .setDescription("Nuevo bono mágico al ataque")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("weapon_magic_bonus_damage")
-            .setDescription("Nuevo bono mágico al daño")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  ADMIN: EDIT_ARMOR
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("edit_armor")
-        .setDescription("Edita los datos de armadura de un objeto.")
-        .addStringOption(o =>
-          o
-            .setName("name")
-            .setDescription("Nombre del objeto (armadura) a editar")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("armor_type")
-            .setDescription("Nuevo tipo de armadura")
-            .addChoices(
-              { name: "Ligera", value: "light" },
-              { name: "Intermedia", value: "medium" },
-              { name: "Pesada", value: "heavy" },
-              { name: "Escudo", value: "shield" },
-              { name: "Otra", value: "other" }
-            )
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("armor_base_ac")
-            .setDescription("Nueva CA base")
-            .setRequired(false)
-        )
-        .addBooleanOption(o =>
-          o
-            .setName("armor_allows_dex_bonus")
-            .setDescription("¿Aplica bonificador de Destreza?")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("armor_max_dex_bonus")
-            .setDescription("Nuevo máximo de bonificador de Destreza")
-            .setRequired(false)
-        )
-        .addBooleanOption(o =>
-          o
-            .setName("armor_stealth_disadvantage")
-            .setDescription("¿Da desventaja en Sigilo?")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("armor_magic_bonus_ac")
-            .setDescription("Nuevo bono mágico a la CA")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  INFO → MENÚ
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("info")
-        .setDescription("Muestra información de un objeto (menú).")
-    )
-
-    // ======================
-    //  ECONOMÍA: STORE
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("store")
-        .setDescription("Muestra todos los objetos disponibles en la tienda.")
-    )
-
-    // ======================
-    //  ECONOMÍA: BUY
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("buy")
-        .setDescription("Compra un objeto de la tienda para uno de tus personajes.")
-        .addStringOption(o =>
-          o
-            .setName("item")
-            .setDescription("Nombre del objeto a comprar")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("character")
-            .setDescription("Nombre de tu personaje que compra")
-            .setRequired(true)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("quantity")
-            .setDescription("Cantidad (por defecto 1)")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  ECONOMÍA: SELL
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("sell")
-        .setDescription("Vende un objeto de tu inventario a la tienda.")
-        .addStringOption(o =>
-          o
-            .setName("item")
-            .setDescription("Nombre del objeto a vender")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("character")
-            .setDescription("Nombre de tu personaje que vende")
-            .setRequired(true)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("quantity")
-            .setDescription("Cantidad (por defecto 1)")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  ECONOMÍA: TRADE
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("trade")
-        .setDescription("Intercambia un objeto por moneda entre dos personajes.")
-        .addStringOption(o =>
-          o
-            .setName("item")
-            .setDescription("Nombre del objeto a intercambiar")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("from_character")
-            .setDescription("Nombre del personaje que entrega el objeto")
-            .setRequired(true)
-        )
-        .addUserOption(o =>
-          o
-            .setName("to_user")
-            .setDescription("Jugador que recibe el objeto")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("to_character")
-            .setDescription("Nombre del personaje que paga la moneda")
-            .setRequired(true)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("gold")
-            .setDescription("Cantidad de moneda que se paga a cambio")
-            .setRequired(true)
-        )
-    )
-
-    // ======================
-    //  MOD: GIVE
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("give")
-        .setDescription("Da un objeto a un personaje (moderación).")
-        .addStringOption(o =>
-          o
-            .setName("item")
-            .setDescription("Nombre del objeto a dar")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("character")
-            .setDescription("Nombre del personaje que recibe el objeto")
-            .setRequired(true)
-        )
-        .addUserOption(o =>
-          o
-            .setName("user")
-            .setDescription("Dueño del personaje (opcional, para desambiguar)")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("quantity")
-            .setDescription("Cantidad (por defecto 1)")
-            .setRequired(false)
-        )
-    )
-
-    // ======================
-    //  MOD: TAKE
-    // ======================
-    .addSubcommand(sub =>
-      sub
-        .setName("take")
-        .setDescription("Quita un objeto del inventario de un personaje (moderación).")
-        .addStringOption(o =>
-          o
-            .setName("item")
-            .setDescription("Nombre del objeto a quitar")
-            .setRequired(true)
-        )
-        .addStringOption(o =>
-          o
-            .setName("character")
-            .setDescription("Nombre del personaje al que se le quita el objeto")
-            .setRequired(true)
-        )
-        .addUserOption(o =>
-          o
-            .setName("user")
-            .setDescription("Dueño del personaje (opcional, para desambiguar)")
-            .setRequired(false)
-        )
-        .addIntegerOption(o =>
-          o
-            .setName("quantity")
-            .setDescription("Cantidad (por defecto 1)")
-            .setRequired(false)
-        )
-    ),
-
-  async execute(interaction) {
-    const sub = interaction.options.getSubcommand();
-
-    if (sub === "add") return handleAdd(interaction);
-    if (sub === "add_weapon") return handleAddWeapon(interaction);
-    if (sub === "add_armor") return handleAddArmor(interaction);
-
-    if (sub === "delete") return handleDelete(interaction);
-    if (sub === "enable") return handleEnable(interaction);
-    if (sub === "disable") return handleDisable(interaction);
-
-    if (sub === "edit") return handleEdit(interaction);
-    if (sub === "edit_weapon") return handleEditWeapon(interaction);
-    if (sub === "edit_armor") return handleEditArmor(interaction);
-
-    if (sub === "info") return handleInfo(interaction);
-
-    if (sub === "store") return handleStore(interaction);
-    if (sub === "buy") return handleBuy(interaction);
-    if (sub === "sell") return handleSell(interaction);
-    if (sub === "trade") return handleTrade(interaction);
-
-    if (sub === "give") return handleGive(interaction);
-    if (sub === "take") return handleTake(interaction);
-  }
-};
 
 // ===================================================
 // Helpers comunes
@@ -781,7 +41,9 @@ function buildWeaponBlock(w) {
 
   if (w.damageDice || w.damageType) {
     lines.push(
-      `• Daño: **${w.damageDice || "—"}${w.damageType ? ` (${w.damageType})` : ""}**`
+      `• Daño: **${w.damageDice || "—"}${
+        w.damageType ? ` (${w.damageType})` : ""
+      }**`
     );
   }
 
@@ -801,9 +63,9 @@ function buildWeaponBlock(w) {
 
   if (w.magicBonusAttack || w.magicBonusDamage) {
     lines.push(
-      `• Bono mágico: ataque ${formatBonus(w.magicBonusAttack)}, daño ${formatBonus(
-        w.magicBonusDamage
-      )}`
+      `• Bono mágico: ataque ${formatBonus(
+        w.magicBonusAttack
+      )}, daño ${formatBonus(w.magicBonusDamage)}`
     );
   }
 
@@ -863,11 +125,12 @@ function buildItemEmbed(item, eco) {
     typeof item.weight === "number" ? `${item.weight}` : "0";
 
   const baseValue = typeof item.value === "number" ? item.value : 0;
-  const valueText = `${eco.currencyIcon} ${baseValue} ${eco.currencyShort}`;
+  const safeBaseValue = Math.max(1, baseValue);
+  const valueText = `${eco.currencyIcon} ${safeBaseValue} ${eco.currencyShort}`;
 
-  const shopPrice =
-    item.shopPrice && item.shopPrice > 0 ? item.shopPrice : baseValue;
-
+  const shopPriceRaw =
+    item.shopPrice && item.shopPrice > 0 ? item.shopPrice : safeBaseValue;
+  const shopPrice = Math.max(1, shopPriceRaw);
   const shopText = `${eco.currencyIcon} ${shopPrice} ${eco.currencyShort}`;
 
   const embed = new EmbedBuilder()
@@ -901,7 +164,6 @@ function buildItemEmbed(item, eco) {
       }
     );
 
-  // Bloque especial si es arma
   if (item.type === "weapon" && item.weaponData) {
     embed.addFields({
       name: "⚔️ Detalles de arma",
@@ -910,7 +172,6 @@ function buildItemEmbed(item, eco) {
     });
   }
 
-  // Bloque especial si es armadura
   if (item.type === "armor" && item.armorData) {
     embed.addFields({
       name: "🛡️ Detalles de armadura",
@@ -921,6 +182,769 @@ function buildItemEmbed(item, eco) {
 
   return embed;
 }
+
+// ===================================================
+// COMMAND DEFINITION
+// ===================================================
+const data = new SlashCommandBuilder()
+  .setName("item")
+  .setDescription("Administra y usa los objetos del sistema.")
+
+  // ======================
+  //  ADMIN: ADD (GENÉRICO)
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("add")
+      .setDescription(
+        "Crea un nuevo objeto genérico (sin datos de arma/armadura)."
+      )
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre del objeto")
+          .setRequired(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("type")
+          .setDescription("Tipo de objeto")
+          .addChoices(
+            { name: "Arma", value: "weapon" },
+            { name: "Armadura", value: "armor" },
+            { name: "Equipo", value: "gear" },
+            { name: "Consumible", value: "consumable" },
+            { name: "Herramienta", value: "tool" },
+            { name: "Otro", value: "other" }
+          )
+          .setRequired(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("rarity")
+          .setDescription("Rareza del objeto")
+          .addChoices(
+            { name: "Ninguna / genérica", value: "none" },
+            { name: "Común", value: "common" },
+            { name: "Poco común", value: "uncommon" },
+            { name: "Raro", value: "rare" },
+            { name: "Muy raro", value: "very_rare" },
+            { name: "Legendario", value: "legendary" },
+            { name: "Artefacto", value: "artifact" }
+          )
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("value")
+          .setDescription("Valor base de la moneda")
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("weight")
+          .setDescription("Peso")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("description")
+          .setDescription("Descripción corta")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  ADMIN: ADD_WEAPON
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("add_weapon")
+      .setDescription("Crea un nuevo objeto de tipo arma.")
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre del arma")
+          .setRequired(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("rarity")
+          .setDescription("Rareza del arma")
+          .addChoices(
+            { name: "Ninguna / genérica", value: "none" },
+            { name: "Común", value: "common" },
+            { name: "Poco común", value: "uncommon" },
+            { name: "Raro", value: "rare" },
+            { name: "Muy raro", value: "very_rare" },
+            { name: "Legendario", value: "legendary" },
+            { name: "Artefacto", value: "artifact" }
+          )
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("value")
+          .setDescription("Valor base de la moneda")
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("weight")
+          .setDescription("Peso")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("description")
+          .setDescription("Descripción corta")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("weapon_damage_dice")
+          .setDescription("Daño del arma (ej. 1d8, 2d6)")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("weapon_damage_type")
+          .setDescription("Tipo de daño (ej. slashing, piercing, fire)")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("weapon_properties")
+          .setDescription(
+            "Propiedades (light, heavy, finesse...) separadas por comas"
+          )
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_reach")
+          .setDescription("Alcance cuerpo a cuerpo (ft), ej. 5 o 10")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_range_normal")
+          .setDescription("Rango normal (ft) si es a distancia/arrojadiza")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_range_max")
+          .setDescription("Rango máximo (ft) si es a distancia/arrojadiza")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("weapon_ability_mode")
+          .setDescription("Estadística usada para ataque/daño")
+          .addChoices(
+            { name: "Fuerza", value: "str" },
+            { name: "Destreza", value: "dex" },
+            {
+              name: "Fuerza o Destreza (la más alta)",
+              value: "str_or_dex_highest"
+            },
+            { name: "Otra / especial", value: "other" }
+          )
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_magic_bonus_attack")
+          .setDescription("Bono mágico al ataque (+1, +2, +3)")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_magic_bonus_damage")
+          .setDescription("Bono mágico al daño (+1, +2, +3)")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  ADMIN: ADD_ARMOR
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("add_armor")
+      .setDescription("Crea un nuevo objeto de tipo armadura.")
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre de la armadura")
+          .setRequired(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("rarity")
+          .setDescription("Rareza de la armadura")
+          .addChoices(
+            { name: "Ninguna / genérica", value: "none" },
+            { name: "Común", value: "common" },
+            { name: "Poco común", value: "uncommon" },
+            { name: "Raro", value: "rare" },
+            { name: "Muy raro", value: "very_rare" },
+            { name: "Legendario", value: "legendary" },
+            { name: "Artefacto", value: "artifact" }
+          )
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("value")
+          .setDescription("Valor base de la moneda")
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("weight")
+          .setDescription("Peso")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("description")
+          .setDescription("Descripción corta")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("armor_type")
+          .setDescription("Tipo de armadura")
+          .addChoices(
+            { name: "Ligera", value: "light" },
+            { name: "Intermedia", value: "medium" },
+            { name: "Pesada", value: "heavy" },
+            { name: "Escudo", value: "shield" },
+            { name: "Otra", value: "other" }
+          )
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("armor_base_ac")
+          .setDescription("CA base (ej. 11, 12, 14)")
+          .setRequired(false)
+      )
+      .addBooleanOption(o =>
+        o
+          .setName("armor_allows_dex_bonus")
+          .setDescription("¿Aplica bonificador de Destreza?")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("armor_max_dex_bonus")
+          .setDescription("Máximo bonificador de Destreza (ej. +2)")
+          .setRequired(false)
+      )
+      .addBooleanOption(o =>
+        o
+          .setName("armor_stealth_disadvantage")
+          .setDescription("¿Da desventaja en Sigilo?")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("armor_magic_bonus_ac")
+          .setDescription("Bono mágico a la CA (+1, +2, +3)")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  ADMIN: DELETE
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("delete")
+      .setDescription("Elimina un objeto por nombre.")
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre del objeto a eliminar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+  )
+
+  // ======================
+  //  ADMIN: ENABLE
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("enable")
+      .setDescription("Activa un objeto.")
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre del objeto a activar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+  )
+
+  // ======================
+  //  ADMIN: DISABLE
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("disable")
+      .setDescription("Desactiva un objeto.")
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre del objeto a desactivar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+  )
+
+  // ======================
+  //  ADMIN: EDIT (BÁSICO)
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("edit")
+      .setDescription("Edita los datos básicos de un objeto.")
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre del objeto a editar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("type")
+          .setDescription("Nuevo tipo (opcional)")
+          .addChoices(
+            { name: "Arma", value: "weapon" },
+            { name: "Armadura", value: "armor" },
+            { name: "Equipo", value: "gear" },
+            { name: "Consumible", value: "consumable" },
+            { name: "Herramienta", value: "tool" },
+            { name: "Otro", value: "other" }
+          )
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("rarity")
+          .setDescription("Nueva rareza")
+          .addChoices(
+            { name: "Ninguna / genérica", value: "none" },
+            { name: "Común", value: "common" },
+            { name: "Poco común", value: "uncommon" },
+            { name: "Raro", value: "rare" },
+            { name: "Muy raro", value: "very_rare" },
+            { name: "Legendario", value: "legendary" },
+            { name: "Artefacto", value: "artifact" }
+          )
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("value")
+          .setDescription("Nuevo valor base")
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("weight")
+          .setDescription("Nuevo peso")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("description")
+          .setDescription("Nueva descripción")
+          .setRequired(false)
+      )
+      .addBooleanOption(o =>
+        o
+          .setName("in_store")
+          .setDescription("¿Aparece en la tienda?")
+          .setRequired(false)
+      )
+      .addBooleanOption(o =>
+        o
+          .setName("buyable")
+          .setDescription("¿Se puede comprar?")
+          .setRequired(false)
+      )
+      .addBooleanOption(o =>
+        o
+          .setName("sellable")
+          .setDescription("¿Se puede vender a la tienda?")
+          .setRequired(false)
+      )
+      .addBooleanOption(o =>
+        o
+          .setName("tradeable")
+          .setDescription("¿Se puede intercambiar?")
+          .setRequired(false)
+      )
+      .addNumberOption(o =>
+        o
+          .setName("shop_price")
+          .setDescription("Precio específico de tienda (0 = usar valor base)")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  ADMIN: EDIT_WEAPON
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("edit_weapon")
+      .setDescription("Edita los datos de arma de un objeto.")
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre del objeto (arma) a editar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("weapon_damage_dice")
+          .setDescription("Nuevo daño del arma (ej. 1d8, 2d6)")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("weapon_damage_type")
+          .setDescription("Nuevo tipo de daño")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("weapon_properties")
+          .setDescription("Nuevas propiedades (separadas por comas)")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_reach")
+          .setDescription("Nuevo alcance cuerpo a cuerpo (ft)")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_range_normal")
+          .setDescription("Nuevo rango normal (ft)")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_range_max")
+          .setDescription("Nuevo rango máximo (ft)")
+          .setRequired(false)
+      )
+      .addStringOption(o =>
+        o
+          .setName("weapon_ability_mode")
+          .setDescription("Nueva estadística usada para ataque/daño")
+          .addChoices(
+            { name: "Fuerza", value: "str" },
+            { name: "Destreza", value: "dex" },
+            {
+              name: "Fuerza o Destreza (la más alta)",
+              value: "str_or_dex_highest"
+            },
+            { name: "Otra / especial", value: "other" }
+          )
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_magic_bonus_attack")
+          .setDescription("Nuevo bono mágico al ataque")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("weapon_magic_bonus_damage")
+          .setDescription("Nuevo bono mágico al daño")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  ADMIN: EDIT_ARMOR
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("edit_armor")
+      .setDescription("Edita los datos de armadura de un objeto.")
+      .addStringOption(o =>
+        o
+          .setName("name")
+          .setDescription("Nombre del objeto (armadura) a editar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("armor_type")
+          .setDescription("Nuevo tipo de armadura")
+          .addChoices(
+            { name: "Ligera", value: "light" },
+            { name: "Intermedia", value: "medium" },
+            { name: "Pesada", value: "heavy" },
+            { name: "Escudo", value: "shield" },
+            { name: "Otra", value: "other" }
+          )
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("armor_base_ac")
+          .setDescription("Nueva CA base")
+          .setRequired(false)
+      )
+      .addBooleanOption(o =>
+        o
+          .setName("armor_allows_dex_bonus")
+          .setDescription("¿Aplica bonificador de Destreza?")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("armor_max_dex_bonus")
+          .setDescription("Nuevo máximo de bonificador de Destreza")
+          .setRequired(false)
+      )
+      .addBooleanOption(o =>
+        o
+          .setName("armor_stealth_disadvantage")
+          .setDescription("¿Da desventaja en Sigilo?")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("armor_magic_bonus_ac")
+          .setDescription("Nuevo bono mágico a la CA")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  INFO → MENÚ
+  // ======================
+  .addSubcommand(sub =>
+    sub.setName("info").setDescription("Muestra información de un objeto (menú).")
+  )
+
+  // ======================
+  //  ECONOMÍA: STORE
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("store")
+      .setDescription("Muestra todos los objetos disponibles en la tienda.")
+  )
+
+  // ======================
+  //  ECONOMÍA: BUY
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("buy")
+      .setDescription(
+        "Compra un objeto de la tienda para uno de tus personajes."
+      )
+      .addStringOption(o =>
+        o
+          .setName("item")
+          .setDescription("Nombre del objeto a comprar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("character")
+          .setDescription("Nombre de tu personaje que compra")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("quantity")
+          .setDescription("Cantidad (por defecto 1)")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  ECONOMÍA: SELL
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("sell")
+      .setDescription("Vende un objeto de tu inventario a la tienda.")
+      .addStringOption(o =>
+        o
+          .setName("item")
+          .setDescription("Nombre del objeto a vender")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("character")
+          .setDescription("Nombre de tu personaje que vende")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("quantity")
+          .setDescription("Cantidad (por defecto 1)")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  ECONOMÍA: TRADE
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("trade")
+      .setDescription("Intercambia un objeto por moneda entre dos personajes.")
+      .addStringOption(o =>
+        o
+          .setName("item")
+          .setDescription("Nombre del objeto a intercambiar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("from_character")
+          .setDescription("Nombre del personaje que entrega el objeto")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addUserOption(o =>
+        o
+          .setName("to_user")
+          .setDescription("Jugador que recibe el objeto")
+          .setRequired(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("to_character")
+          .setDescription("Nombre del personaje que paga la moneda")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("gold")
+          .setDescription("Cantidad de moneda que se paga a cambio")
+          .setRequired(true)
+      )
+  )
+
+  // ======================
+  //  ECONOMÍA: CONFIG_SELL_RATIO
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("config_sell_ratio")
+      .setDescription(
+        "Configura el ratio al que la tienda compra objetos (por defecto 0.5)."
+      )
+      .addNumberOption(o =>
+        o
+          .setName("ratio")
+          .setDescription("Entre 0.1 y 1.0 (ej. 0.5 = 50% del valor).")
+          .setRequired(true)
+      )
+  )
+
+  // ======================
+  //  MOD: GIVE
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("give")
+      .setDescription("Da un objeto a un personaje (moderación).")
+      .addStringOption(o =>
+        o
+          .setName("item")
+          .setDescription("Nombre del objeto a dar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("character")
+          .setDescription("Nombre del personaje que recibe el objeto")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addUserOption(o =>
+        o
+          .setName("user")
+          .setDescription("Dueño del personaje (opcional, para desambiguar)")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("quantity")
+          .setDescription("Cantidad (por defecto 1)")
+          .setRequired(false)
+      )
+  )
+
+  // ======================
+  //  MOD: TAKE
+  // ======================
+  .addSubcommand(sub =>
+    sub
+      .setName("take")
+      .setDescription(
+        "Quita un objeto del inventario de un personaje (moderación)."
+      )
+      .addStringOption(o =>
+        o
+          .setName("item")
+          .setDescription("Nombre del objeto a quitar")
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption(o =>
+        o
+          .setName("character")
+          .setDescription(
+            "Nombre del personaje al que se le quita el objeto"
+          )
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addUserOption(o =>
+        o
+          .setName("user")
+          .setDescription("Dueño del personaje (opcional, para desambiguar)")
+          .setRequired(false)
+      )
+      .addIntegerOption(o =>
+        o
+          .setName("quantity")
+          .setDescription("Cantidad (por defecto 1)")
+          .setRequired(false)
+      )
+  );
 
 // ===================================================
 // ADMIN HANDLERS
@@ -1007,9 +1031,12 @@ async function handleAddWeapon(interaction) {
 
   const weaponDamageDice = interaction.options.getString("weapon_damage_dice");
   const weaponDamageType = interaction.options.getString("weapon_damage_type");
-  const weaponPropertiesRaw = interaction.options.getString("weapon_properties");
+  const weaponPropertiesRaw = interaction.options.getString(
+    "weapon_properties"
+  );
   const weaponReach = interaction.options.getInteger("weapon_reach");
-  const weaponRangeNormal = interaction.options.getInteger("weapon_range_normal");
+  const weaponRangeNormal =
+    interaction.options.getInteger("weapon_range_normal");
   const weaponRangeMax = interaction.options.getInteger("weapon_range_max");
   const weaponAbilityMode =
     interaction.options.getString("weapon_ability_mode") || "str";
@@ -1318,7 +1345,9 @@ async function handleEditWeapon(interaction) {
 
   if (item.type !== "weapon") {
     return interaction.reply({
-      content: `❌ **${item.name}** no es un arma (type = ${item.type || "sin tipo"}).`,
+      content: `❌ **${item.name}** no es un arma (type = ${
+        item.type || "sin tipo"
+      }).`,
       ephemeral: true
     });
   }
@@ -1330,8 +1359,10 @@ async function handleEditWeapon(interaction) {
   const rangeNormal = interaction.options.getInteger("weapon_range_normal");
   const rangeMax = interaction.options.getInteger("weapon_range_max");
   const abilityMode = interaction.options.getString("weapon_ability_mode");
-  const magicBonusAttack = interaction.options.getInteger("weapon_magic_bonus_attack");
-  const magicBonusDamage = interaction.options.getInteger("weapon_magic_bonus_damage");
+  const magicBonusAttack =
+    interaction.options.getInteger("weapon_magic_bonus_attack");
+  const magicBonusDamage =
+    interaction.options.getInteger("weapon_magic_bonus_damage");
 
   if (!item.weaponData) item.weaponData = {};
 
@@ -1347,8 +1378,10 @@ async function handleEditWeapon(interaction) {
   if (rangeNormal !== null) item.weaponData.rangeNormal = rangeNormal;
   if (rangeMax !== null) item.weaponData.rangeMax = rangeMax;
   if (abilityMode !== null) item.weaponData.abilityMode = abilityMode;
-  if (magicBonusAttack !== null) item.weaponData.magicBonusAttack = magicBonusAttack;
-  if (magicBonusDamage !== null) item.weaponData.magicBonusDamage = magicBonusDamage;
+  if (magicBonusAttack !== null)
+    item.weaponData.magicBonusAttack = magicBonusAttack;
+  if (magicBonusDamage !== null)
+    item.weaponData.magicBonusDamage = magicBonusDamage;
 
   await item.save();
 
@@ -1390,25 +1423,33 @@ async function handleEditArmor(interaction) {
 
   if (item.type !== "armor") {
     return interaction.reply({
-      content: `❌ **${item.name}** no es una armadura (type = ${item.type || "sin tipo"}).`,
+      content: `❌ **${item.name}** no es una armadura (type = ${
+        item.type || "sin tipo"
+      }).`,
       ephemeral: true
     });
   }
 
   const armorType = interaction.options.getString("armor_type");
   const baseAC = interaction.options.getInteger("armor_base_ac");
-  const allowsDexBonus = interaction.options.getBoolean("armor_allows_dex_bonus");
+  const allowsDexBonus =
+    interaction.options.getBoolean("armor_allows_dex_bonus");
   const maxDexBonus = interaction.options.getInteger("armor_max_dex_bonus");
-  const stealthDis = interaction.options.getBoolean("armor_stealth_disadvantage");
-  const magicBonusAC = interaction.options.getInteger("armor_magic_bonus_ac");
+  const stealthDis = interaction.options.getBoolean(
+    "armor_stealth_disadvantage"
+  );
+  const magicBonusAC =
+    interaction.options.getInteger("armor_magic_bonus_ac");
 
   if (!item.armorData) item.armorData = {};
 
   if (armorType !== null) item.armorData.armorType = armorType;
   if (baseAC !== null) item.armorData.baseAC = baseAC;
-  if (allowsDexBonus !== null) item.armorData.allowsDexBonus = allowsDexBonus;
+  if (allowsDexBonus !== null)
+    item.armorData.allowsDexBonus = allowsDexBonus;
   if (maxDexBonus !== null) item.armorData.maxDexBonus = maxDexBonus;
-  if (stealthDis !== null) item.armorData.hasStealthDisadvantage = stealthDis;
+  if (stealthDis !== null)
+    item.armorData.hasStealthDisadvantage = stealthDis;
   if (magicBonusAC !== null) item.armorData.magicBonusAC = magicBonusAC;
 
   await item.save();
@@ -1443,10 +1484,9 @@ async function handleInfo(interaction) {
       items.slice(0, 25).map(it => ({
         label: it.name,
         value: it._id.toString(),
-        description: `${(it.type || "sin tipo")} · ${(it.rarity || "common")}`.slice(
-          0,
-          90
-        )
+        description: `${(it.type || "sin tipo")} · ${
+          it.rarity || "common"
+        }`.slice(0, 90)
       }))
     );
 
@@ -1492,10 +1532,17 @@ async function handleStore(interaction) {
     embed.setDescription(
       chunk
         .map(it => {
-          const baseValue = typeof it.value === "number" ? it.value : 0;
-          const shopPrice =
+          const baseValue = Math.max(
+            1,
+            typeof it.value === "number" ? it.value : 0
+          );
+          const rawShopPrice =
             it.shopPrice && it.shopPrice > 0 ? it.shopPrice : baseValue;
-          return `**${it.name}** (${it.type || "tipo desconocido"}) — **${eco.currencyIcon} ${shopPrice} ${eco.currencyShort}**`;
+          const shopPrice = Math.max(1, rawShopPrice);
+
+          return `**${it.name}** (${it.type || "tipo desconocido"}) — **${
+            eco.currencyIcon
+          } ${shopPrice} ${eco.currencyShort}**`;
         })
         .join("\n")
     );
@@ -1540,10 +1587,13 @@ async function handleBuy(interaction) {
     });
   }
 
-  const baseValue = typeof item.value === "number" ? item.value : 0;
-  const shopPrice =
+  const baseValue = Math.max(
+    1,
+    typeof item.value === "number" ? item.value : 0
+  );
+  const rawShopPrice =
     item.shopPrice && item.shopPrice > 0 ? item.shopPrice : baseValue;
-
+  const shopPrice = Math.max(1, rawShopPrice);
   const totalCost = shopPrice * quantity;
 
   const character = await CharacterModel.findOne({
@@ -1648,10 +1698,16 @@ async function handleSell(interaction) {
     });
   }
 
-  const baseValue =
-    item.shopPrice && item.shopPrice > 0 ? item.shopPrice : (item.value || 0);
+  const baseValueRaw =
+    item.shopPrice && item.shopPrice > 0 ? item.shopPrice : item.value || 0;
+  const baseValue = Math.max(1, baseValueRaw);
 
-  const sellPricePerUnit = Math.floor(baseValue * 0.5);
+  const sellRatio =
+    typeof eco.sellRatio === "number" && eco.sellRatio > 0
+      ? eco.sellRatio
+      : 0.5;
+
+  const sellPricePerUnit = Math.max(1, Math.floor(baseValue * sellRatio));
   const totalAmount = sellPricePerUnit * quantity;
 
   // Actualizar inventario
@@ -1670,7 +1726,8 @@ async function handleSell(interaction) {
   return interaction.reply({
     content:
       `💰 ${character.name} vendió **${quantity}x ${item.name}** por **${eco.currencyIcon} ${totalAmount} ${eco.currencyShort}**.\n` +
-      `${eco.currencyName} actual: **${eco.currencyIcon} ${character.gold} ${eco.currencyShort}**.`,
+      `${eco.currencyName} actual: **${eco.currencyIcon} ${character.gold} ${eco.currencyShort}**.\n` +
+      `📊 Ratio de compra de la tienda: **${Math.round(sellRatio * 100)}%** del valor.`,
     ephemeral: true
   });
 }
@@ -1680,7 +1737,9 @@ async function handleSell(interaction) {
 // ===================================================
 async function handleTrade(interaction) {
   const itemName = interaction.options.getString("item").trim();
-  const fromCharName = interaction.options.getString("from_character").trim();
+  const fromCharName = interaction.options
+    .getString("from_character")
+    .trim();
   const toUser = interaction.options.getUser("to_user");
   const toCharName = interaction.options.getString("to_character").trim();
   const goldAmount = interaction.options.getInteger("gold");
@@ -1788,6 +1847,43 @@ async function handleTrade(interaction) {
       `• **${toChar.name}** → paga **${eco.currencyIcon} ${goldAmount} ${eco.currencyShort}** a **${fromChar.name}**.\n\n` +
       `💰 ${fromChar.name}: **${eco.currencyIcon} ${fromChar.gold} ${eco.currencyShort}**\n` +
       `💰 ${toChar.name}: **${eco.currencyIcon} ${toChar.gold} ${eco.currencyShort}**`,
+    ephemeral: true
+  });
+}
+
+// ===================================================
+// CONFIG_SELL_RATIO
+// ===================================================
+async function handleConfigSellRatio(interaction) {
+  const member = interaction.member;
+  if (!member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+    return interaction.reply({
+      content: "❌ Solo administradores pueden configurar el ratio de la tienda.",
+      ephemeral: true
+    });
+  }
+
+  const ratio = interaction.options.getNumber("ratio");
+
+  if (ratio <= 0 || ratio > 1.0) {
+    return interaction.reply({
+      content: "❌ El ratio debe estar entre **0.1** y **1.0**.",
+      ephemeral: true
+    });
+  }
+
+  const eco = await getEconomyConfig(interaction.guild.id);
+
+  eco.sellRatio = ratio;
+
+  if (typeof eco.save === "function") {
+    await eco.save();
+  }
+
+  return interaction.reply({
+    content: `✅ Ratio de compra de la tienda actualizado a **${Math.round(
+      ratio * 100
+    )}%** del valor base.`,
     ephemeral: true
   });
 }
@@ -1962,3 +2058,112 @@ async function handleTake(interaction) {
     ephemeral: true
   });
 }
+
+// ===================================================
+// AUTOCOMPLETE
+// ===================================================
+async function handleAutocomplete(interaction) {
+  const focused = interaction.options.getFocused(true); // { name, value }
+  const search = focused.value || "";
+
+  let subcommand = null;
+  try {
+    subcommand = interaction.options.getSubcommand(false);
+  } catch {
+    subcommand = null;
+  }
+
+  // ---- AUTOCOMPLETE PARA ITEMS ----
+  if (["item", "name"].includes(focused.name)) {
+    const query = {
+      name: new RegExp(search, "i")
+    };
+
+    // Ajustes según el subcomando
+    if (subcommand === "buy") {
+      query.isEnabled = true;
+      query.isInStore = true;
+      query.isBuyable = true;
+    } else if (subcommand === "sell") {
+      query.isEnabled = true;
+      query.isSellable = true;
+    } else if (subcommand === "trade") {
+      query.isEnabled = true;
+      query.isTradeable = true;
+    } else if (["enable", "disable", "edit", "delete"].includes(subcommand)) {
+      // en estos, no filtramos por flags, solo por nombre
+    }
+
+    const items = await ItemModel.find(query)
+      .sort({ name: 1 })
+      .limit(25);
+
+    const choices = items.map(it => ({
+      name: `${it.name} (${it.type || "objeto"})`,
+      value: it.name
+    }));
+
+    return interaction.respond(choices);
+  }
+
+  // ---- AUTOCOMPLETE PARA PERSONAJES ----
+  if (
+    ["character", "from_character", "to_character"].includes(focused.name)
+  ) {
+    const charQuery = {
+      guildId: interaction.guild.id,
+      name: new RegExp(search, "i")
+    };
+
+    const chars = await CharacterModel.find(charQuery)
+      .sort({ name: 1 })
+      .limit(25);
+
+    const choices = chars.map(ch => ({
+      name: ch.name,
+      value: ch.name
+    }));
+
+    return interaction.respond(choices);
+  }
+
+  return interaction.respond([]);
+}
+
+// ===================================================
+// EXPORT
+// ===================================================
+export default {
+  data,
+
+  async execute(interaction) {
+    const sub = interaction.options.getSubcommand();
+
+    if (sub === "add") return handleAdd(interaction);
+    if (sub === "add_weapon") return handleAddWeapon(interaction);
+    if (sub === "add_armor") return handleAddArmor(interaction);
+
+    if (sub === "delete") return handleDelete(interaction);
+    if (sub === "enable") return handleEnable(interaction);
+    if (sub === "disable") return handleDisable(interaction);
+
+    if (sub === "edit") return handleEdit(interaction);
+    if (sub === "edit_weapon") return handleEditWeapon(interaction);
+    if (sub === "edit_armor") return handleEditArmor(interaction);
+
+    if (sub === "info") return handleInfo(interaction);
+
+    if (sub === "store") return handleStore(interaction);
+    if (sub === "buy") return handleBuy(interaction);
+    if (sub === "sell") return handleSell(interaction);
+    if (sub === "trade") return handleTrade(interaction);
+    if (sub === "config_sell_ratio") return handleConfigSellRatio(interaction);
+
+    if (sub === "give") return handleGive(interaction);
+    if (sub === "take") return handleTake(interaction);
+  },
+
+  async autocomplete(interaction) {
+    return handleAutocomplete(interaction);
+  }
+};

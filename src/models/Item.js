@@ -1,6 +1,8 @@
 // src/models/Item.js
 import mongoose from "mongoose";
 
+// -------------------- SUB-SCHEMAS: ARMAS Y ARMADURAS -------------------- //
+
 const weaponDataSchema = new mongoose.Schema(
   {
     // ej: "1d8"
@@ -97,6 +99,170 @@ const armorDataSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// -------------------- SUB-SCHEMA: CONTENEDOR DE OTROS ÍTEMS -------------------- //
+//
+// Para cosas como "Paquete de aventurero", mochilas con contenido predefinido, cofres, etc.
+//
+
+const containedItemSchema = new mongoose.Schema(
+  {
+    // Referencia a otro Item del mismo modelo
+    item: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Item",
+      required: true
+    },
+    quantity: {
+      type: Number,
+      default: 1
+    }
+  },
+  { _id: false }
+);
+
+// -------------------- SUB-SCHEMAS: CONDICIONES Y ACCIONES -------------------- //
+// La idea es que el BOT lea estos datos y ejecute la lógica, NO que Mongoose haga magia solo.
+
+// Condiciones para poder disparar un efecto de ítem
+const itemConditionSchema = new mongoose.Schema(
+  {
+    // Nivel mínimo y máximo del personaje (0 = sin tope máximo)
+    minLevel: {
+      type: Number,
+      default: 0
+    },
+    maxLevel: {
+      type: Number,
+      default: 0 // 0 = sin límite superior
+    },
+
+    // Clases requeridas / prohibidas (nombres internos: "fighter", "wizard", etc.)
+    requiredClasses: {
+      type: [String],
+      default: []
+    },
+    forbiddenClasses: {
+      type: [String],
+      default: []
+    },
+
+    // Roles requeridos (por ejemplo IDs de rol de Discord o tags internos)
+    requiredRoles: {
+      type: [String],
+      default: []
+    },
+
+    // Ítems que el usuario debe tener para que se cumpla la condición
+    requiredItems: {
+      type: [
+        {
+          item: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Item"
+          },
+          quantity: {
+            type: Number,
+            default: 1
+          }
+        }
+      ],
+      default: []
+    }
+  },
+  { _id: false }
+);
+
+// Acciones que el ítem puede realizar cuando se dispara un trigger:
+// - Dar/quitar ítems
+// - Dar/quitar roles
+// - Modificar oro (u otra moneda)
+// - Ejecutar macros personalizadas del bot
+const itemActionSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: [
+        "give_item",
+        "remove_item",
+        "give_role",
+        "remove_role",
+        "modify_currency",
+        "run_macro"
+      ],
+      required: true
+    },
+
+    // Para modify_currency: diferencia positiva o negativa
+    currencyDelta: {
+      type: Number,
+      default: 0
+    },
+
+    // Para give_item / remove_item
+    item: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Item"
+    },
+    quantity: {
+      type: Number,
+      default: 1
+    },
+
+    // Para give_role / remove_role (ej: ID de rol de Discord)
+    roleId: {
+      type: String,
+      default: ""
+    },
+
+    // Payload genérico por si quieres pasar datos extra a tu lógica del bot
+    payload: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    }
+  },
+  { _id: false }
+);
+
+// Un efecto es: CUÁNDO (trigger) + QUÉ CONDICIONES + QUÉ ACCIONES
+const itemEffectSchema = new mongoose.Schema(
+  {
+    // Cuándo se dispara este conjunto de acciones
+    trigger: {
+      type: String,
+      enum: [
+        "on_buy",    // al comprar en la tienda
+        "on_sell",   // al vender
+        "on_use",    // al usar (poción, pergamino, etc.)
+        "on_open",   // al abrir (cofre, pack, etc.)
+        "on_equip",  // al equipar (arma, armadura, anillo, etc.)
+        "on_unequip" // al desequipar
+      ],
+      default: "on_use"
+    },
+
+    // Si es true, solo puede aplicar una vez por usuario (p.ej. un paquete inicial)
+    oncePerUser: {
+      type: Boolean,
+      default: false
+    },
+
+    // Condiciones para que este efecto se pueda aplicar
+    conditions: {
+      type: itemConditionSchema,
+      default: () => ({})
+    },
+
+    // Acciones que se ejecutan si las condiciones se cumplen
+    actions: {
+      type: [itemActionSchema],
+      default: []
+    }
+  },
+  { _id: false }
+);
+
+// -------------------- SCHEMA PRINCIPAL DE ÍTEM -------------------- //
+
 const itemSchema = new mongoose.Schema({
   // Nombre del objeto
   name: {
@@ -128,7 +294,7 @@ const itemSchema = new mongoose.Schema({
     default: "common"
   },
 
-  // Valor base
+  // Valor base (en gp)
   value: {
     type: Number,
     default: 0
@@ -156,6 +322,39 @@ const itemSchema = new mongoose.Schema({
   armorData: {
     type: armorDataSchema,
     default: null
+  },
+
+  // -------------------- NUEVO: CONTENEDOR -------------------- //
+  // Si este ítem contiene otros ítems (mochila, paquete de aventurero, cofre con loot, etc.)
+  isContainer: {
+    type: Boolean,
+    default: false
+  },
+
+  // Lista de ítems contenidos
+  contents: {
+    type: [containedItemSchema],
+    default: []
+  },
+
+  // -------------------- NUEVO: USOS / CARGAS -------------------- //
+  // Si el ítem tiene usos limitados (ej: 3 cargas, luego se rompe)
+  maxUses: {
+    type: Number,
+    default: 0 // 0 = infinito / no se controla por este campo
+  },
+
+  // Si se destruye o desaparece al usarlo (poción, pergamino de un solo uso, etc.)
+  consumeOnUse: {
+    type: Boolean,
+    default: false
+  },
+
+  // -------------------- NUEVO: EFECTOS / AUTOMATIZACIONES -------------------- //
+  // Lista de efectos que el bot puede procesar en los distintos triggers
+  effects: {
+    type: [itemEffectSchema],
+    default: []
   },
 
   // Flags de sistema / tienda
@@ -202,4 +401,3 @@ itemSchema.pre("save", function (next) {
 
 const ItemModel = mongoose.model("Item", itemSchema);
 export default ItemModel;
-
